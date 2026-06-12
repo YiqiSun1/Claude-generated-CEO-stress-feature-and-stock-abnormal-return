@@ -1,4 +1,4 @@
-# CEO Linguistic Stress & Stock Returns
+<!-- # CEO Linguistic Stress & Stock Returns
 
 A senior thesis project using NLP and financial econometrics to test whether linguistic stress indicators in CEO earnings call communications predict short- and long-term stock market abnormal returns.
 
@@ -215,4 +215,4 @@ EARNINGSCALL_API_KEY=your_key_here
 - **Period**: 2020 Q1 – 2026 Q1
 - **Quarters per firm**: Up to 4 per year
 - **Company-quarters scored**: 3,000+
-- **Final regression sample**: ~5,342 observations across 429 firms
+- **Final regression sample**: ~5,342 observations across 429 firms -->
