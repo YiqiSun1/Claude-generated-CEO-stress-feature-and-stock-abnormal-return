@@ -217,7 +217,7 @@ EARNINGSCALL_API_KEY=your_key_here
 - **Company-quarters scored**: 3,000+
 - **Final regression sample**: ~5,342 observations across 429 firms -->
 
-## Motivation: 
+<!-- ## Motivation: 
 
 Stress is hard to examine. Usually, we gave out surveys and ask people to rate their stress level. This is to some extent a good proxy but with the rise of large language model, it's made possible to quantify things that's otherwise hard to measure. Stress or "sentiment" is one of them. This allow an opportunity to examine the relationship between CEO stress and company performance or stock return. 
 
@@ -280,7 +280,7 @@ You can access a paper version of this project in here. The paper does not inclu
 If you have questions or are interested in the code and methodology, contact me at ysun26@cmc.edu.
 
 ## Limitations and discussions: 
-Several limitations of this project. First, this paper does not have a causal interpretation since there could be omitted variable bias. The stress score produced by Claude could be stress that's from internal or external factors such as company performance. So we can't say exactly what type of stress is being measured. Second, the data leakage problem: the model I used (Claude Sonnet 4.6) might be trained on the the stock data and already "know" what happen to the stock. 
+Several limitations of this project. First, omitted variable bias. There could be several things that can influence stocks' abnormal returns such as company performance, market conditions, or other external factors. The stress produced by Claude could be correlated with these external factors, weakening the causal relationship between CEO stress and abnormal return. I did control for a set of variables but more rigorous identification could be used. Second, the data leakage problem: the model I used (Claude Sonnet 4.6) might be trained on the the stock data and already "know" what happen to the stock. This concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock dat. 
 
 At the end of the day, this is a good exercise and shows LLM has huge potential in understanding human language and even psychology. I am both scared and excited about the future of LLM.
 
@@ -288,4 +288,4 @@ At the end of the day, this is a good exercise and shows LLM has huge potential 
 I am open to suggestions to improve this project or collaboration on other things. 
 
 
-
+ -->
