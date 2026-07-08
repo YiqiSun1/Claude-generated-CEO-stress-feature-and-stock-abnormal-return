@@ -285,7 +285,7 @@ Several limitations of this project. First, omitted variable bias. There could b
 <!-- At the end of the day, this is a good exercise and shows LLM has huge potential in understanding human language and even psychology. I am both scared and excited about the future of LLM. -->
 
 ## Critique and advice:
-I am open to suggestions to improve this project or collaboration on other things. 
+I am open to suggestions to improve this project or collaboration on other things. ysun26@cmc.edu
 
 
 
