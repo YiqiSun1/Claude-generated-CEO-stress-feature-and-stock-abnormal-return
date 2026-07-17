@@ -7,4 +7,7 @@ regression_result/*
 to_do.md
 Data/*
 !Data/sample_data.csv
+Code/*
+!Code/submit_batch.py
+!Code/get_data.py
 
