@@ -1,0 +1,10 @@
+.env
+.Rproj.user
+Pandas
+regression_result/
+!regression_result/regression_result.log
+
+to_do.md
+Data/*
+!Data/sample_data.csv
+
