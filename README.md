@@ -1,16 +1,14 @@
-<!-- # CEO Linguistic Stress & Stock Returns
+## Project overview
+This repository addresses a research question: Can CEOs’ internal stress predict future abnormal stock returns? The motivations are threefold. First, it’s important to model the effects of stress on performance-related activities. Traditionally, stress is proxied by questionnaire or dictionary approaches (Harvard IV-4 dictionary). Recently, the rise of LLM and ML models have been used to proxy stress. While these models might not be superior in this task, it provides an important research tool for researchers. Furthermore, LLM allows researchers to analyze large amounts of text without sifting through documents, increasing the scalability of studies. This research uses an approach of using LLM with psychology-backed prompts designed to proxy CEOs’ internal stress by analyzing their linguistic patterns in the quarterly earning calls. More discussion of this scoring methodology is explained later. By establishing a potential correlation between CEOs’ stress and stock abnormal returns, one can understand more about how stress affects performance in the work setting. 
 
-A senior thesis project using NLP and financial econometrics to test whether linguistic stress indicators in CEO earnings call communications predict short- and long-term stock market abnormal returns.
+Second, predicting stock return is an essential problem in finance. Analyzing if using LLM-based data features provides an “edge” is useful for understanding information processing in the financial market and the potential application of LLMs in the financial setting.
 
----
+The stock abnormal return windows I tested are [0,+1] (the first trading day after the earnings call date), [+2,+7] (2-7 days after the earnings call), and [+2,+180]. I found several notable results. First, there exists a significant correlation between the stress score observed during the Q&A session of the earnings call and the stock abnormal return during the window [0, +1]. (-0.005, t=-5.275), meaning the market immediately incorporates the stress signal. Second, CEOs’ stress exhibited during prepared remarks has a stronger correlation with stock abnormal return in the [0,+1] window than Q&A session, suggesting investors might pay more attention to the prepared remarks of the earnings call. Finally, The stress signal has no predictive power in both the [+2,+7] and [+2,+180] windows. 
 
-## Research Question
+Following these findings, I constructed a long-short trading strategy with a one day holding period and conducted a backtest using data from 2020-2024. The entry rule is set on the day immediately after the earnings call, and the exit is the day after. The strategy only trades on earnings call days such that at least 2 longs and 2 shorts positions are available to ensure proper risk. The strategy allocates money equally across stocks to ensure profits are driven by the signal rather than by company size. This strategy fails to earn a positive return during the backtesting period from 2020 to 2024. Although this decision is made somewhat arbitrarily and further experiment is needed for the future. 
 
-Can the **linguistic stress evident in CEO communication** — measured through psycholinguistic markers in earnings call transcripts — predict **Cumulative Abnormal Returns (CAR)** over different time windows?
-
----
-
-## Methodology Overview
+# Methodology
+## Methodology overview
 
 ```
 Earnings Call Transcripts
@@ -26,68 +24,65 @@ Compute Cumulative Abnormal Returns (CAR)
 Regression analysis (OLS + Fixed Effects)
 ```
 
----
+## Prompting used: 
+'''text
+You are an expert in psycholinguistics and corporate financial communication.
+
+Analyze the linguistic stress displayed by a CEO in the {section} of an earnings call.
+
+Linguistic stress refers to HOW the CEO speaks, not WHAT topics are discussed.
+Calibrate your scoring relative to a typical confident CEO earnings call — not everyday conversation.
+
+Look for these markers:
+1. HEDGING: "I think", "perhaps", "we hope", "roughly", "it's difficult to say"
+2. PRONOUN DISTANCING: Shifting from "I" to "we", passive voice when addressing bad news
+3. NEGATIVE AFFECT: concern, challenge, difficult, uncertainty, headwind, pressure
+4. VAGUENESS: Avoiding specific numbers, deflecting questions, non-answers
+5. EXCESSIVE QUALIFICATION: Unusual caveats, disclaimers, conditional statements
+6. DISFLUENCY: Restarts, repetition, filler phrases ("you know", "sort of")
+7. TEMPORAL ORIENTATION: Excessive focus on past problems vs forward guidance
+
+Score 1 to 5 (integers only):
+1 = No stress. Confident, direct, specific. Strong forward guidance.
+2 = Minimal stress. Mostly confident with occasional hedging.
+3 = Moderate stress. Noticeable hedging, some distancing or vagueness.
+4 = High stress. Multiple markers present, evasiveness, strong negative affect.
+5 = Very high stress. Pervasive markers throughout, highly evasive, emotionally loaded.
+'''
 
 ## Data Sources
 
-| Source | Description | File |
-|--------|-------------|------|
-| earningscall API | S&P 500 earnings call transcripts (2020–2026) | `Data/ceo_transcripts_final.parquet` |
-| CRSP | Daily stock returns and value-weighted market returns | `Data/crsp_daily.csv` |
-| Compustat | Quarterly firm-level financial fundamentals | `Data/fundamental .csv` |
-| IBES | Analyst EPS forecasts and actuals | `Data/actual_EPS.csv`, `Data/summarystatistics.csv` |
-| Loughran-McDonald | Financial sentiment dictionary (1993–2025) | Used via `Code /add_lm.py` |
+| Source | Description |
+|--------|-------------|
+| earningscall API | S&P 500 earnings call transcripts (2020–2026) |
+| CRSP | Daily stock returns and value-weighted market returns |
+| Compustat | Quarterly firm-level financial fundamentals |
+| IBES | Analyst EPS forecasts and actuals |
+| Loughran-McDonald | Financial sentiment dictionary (1993–2025) |
 
----
+Final samples include: 
+| companies: 470 S&P 500 firms | quarters: 2020 Q1 – 2024 Q4 | observations: 8022 firm observations |
 
-## Project Structure
+## Summary statistics: 
 
-```
-├── Code /                          # Data pipeline scripts
-│   ├── get_data.py                 # Pull transcripts from earningscall API
-│   ├── stress_scoring.py           # Score CEO stress via Claude API
-│   ├── CRSP_merge.py               # Merge stress scores with CRSP returns
-│   ├── Car_0_1_2_180.py            # Compute CAR windows (0→1, 0→180 days)
-│   ├── Car2_180.py                 # CAR window robustness: days 2–180
-│   ├── Car_2_7.py                  # CAR window robustness: days 2–7
-│   ├── merging_everything.py       # Master merge: stress + CRSP + fundamentals
-│   ├── merging_fundamental.py      # Compustat integration
-│   ├── merging_IBES.py             # IBES analyst forecast integration
-│   ├── add_lm.py                   # Add Loughran-McDonald sentiment scores
-│   └── ...
-├── regression/                     # Regression analysis scripts
-│   ├── ROA.py                      # Regressions on Return on Assets
-│   └── ...
-├── Data/                           # Raw and processed datasets
-│   ├── ceo_transcripts_final.parquet   # All transcripts (285 MB)
-│   ├── new_car_1_with_fundamental.csv  # Main analysis dataset (1.5 MB)
-│   ├── master_final.csv                # Full merged master dataset
-│   └── ...
-├── data_testing_storage/
-│   └── pivoted_stress_scores.csv   # Stress scores for 3,000+ company-quarters
-├── regression_result/              # Regression output logs
-├── Documentation/                  # Project notes
-└── archive/                        # Legacy/exploratory scripts
-```
 
----
+## Reproducing data: 
 
-## Key Variables
+## Regression form:
 
-### Dependent Variables
+<!-- ### Dependent Variables
 | Variable | Description |
 |----------|-------------|
 | `car_01` | Cumulative Abnormal Return, days 0 to +1 (2-day) |
-| `car_0180` | Cumulative Abnormal Return, days 0 to +180 (6-month) |
-| Future ROA | Return on Assets 2 quarters forward |
-| Future OCF | Operating Cash Flow 2 quarters forward |
+| `car_0180` | Cumulative Abnormal Return, days 0 to +180 (6-month) | -->
 
-### Independent Variables — Stress Scores
+
+<!-- ### Independent Variables — Stress Scores
 | Variable | Description |
 |----------|-------------|
 | `stress_pr` | CEO linguistic stress in Prepared Remarks (1–5 scale) |
 | `stress_qa` | CEO linguistic stress in Q&A session (1–5 scale) |
-| `stress_whole` | CEO linguistic stress across the full call (1–5 scale) |
+| `stress_whole` | CEO linguistic stress across the full call (1–5 scale) | -->
 
 ### Control Variables
 | Variable | Description |
@@ -100,29 +95,10 @@ Regression analysis (OLS + Fixed Effects)
 | `POSWORDS` | Count of Loughran-McDonald positive words |
 | `NEGWORDS` | Count of Loughran-McDonald negative words |
 
----
 
-## Stress Scoring via LLM
 
-Stress scores are generated using **Claude Sonnet** (Anthropic API) applied to CEO speech segments. The model rates stress on an integer scale of **1–5**, calibrated to reflect typical CEO communication patterns.
 
-**Psycholinguistic markers analyzed:**
-1. Hedging language ("I think", "perhaps", "roughly")
-2. Pronoun distancing (I → we, passive voice shifts)
-3. Negative affect (expressions of concern, uncertainty, challenge)
-4. Vagueness (avoidance of specific numbers or commitments)
-5. Excessive qualification and caveats
-6. Disfluency (restarts, fillers, repetition)
-7. Temporal orientation (dwelling on past problems vs. forward guidance)
-
-Each earnings call is scored in three segments:
-- **Prepared Remarks (PR)**: CEO's scripted opening statement
-- **Q&A**: CEO responses to analyst questions
-- **Whole Call**: Aggregate of the full transcript
-
----
-
-## Abnormal Returns Calculation
+<!-- ## Abnormal Returns Calculation
 
 Abnormal Return (AR) for each trading day is computed as:
 
@@ -136,53 +112,23 @@ Cumulative Abnormal Returns:
 
 ```
 CAR(t1, t2) = Σ AR_t  for t = t1 to t2
-```
+``` -->
 
-Event windows computed: `(0,1)`, `(0,7)`, `(0,27)`, `(0,180)`, `(2,7)`, `(2,180)`
 
----
 
-## Regression Specifications
 
-Four specifications are estimated for each dependent variable:
 
-| Model | Specification |
-|-------|--------------|
-| No FE | OLS with two-way clustered standard errors (firm × time) |
-| Firm FE | Fixed effects by company |
-| Time FE | Fixed effects by quarter |
-| Firm + Time FE | Both firm and time fixed effects (most stringent) |
 
-Implemented using [`pyfixest`](https://github.com/py-econometrics/pyfixest).
-
-### Selected Results (CAR 0→1, stress_qa)
-
-| Variable | Coefficient | p-value |
-|----------|-------------|---------|
-| `stress_qa` | −0.008 | < 0.001 |
-| `stress_pr` | −0.014 | < 0.001 |
-| `UE` | +0.040 | < 0.001 |
-| `POSWORDS` | +0.430 | 0.023 |
-| `NEGWORDS` | −1.387 | < 0.001 |
-
-**Sample**: ~5,342 observations, 429 firms, 2020–2025.
-
-Higher CEO linguistic stress is associated with significantly lower 2-day abnormal returns, even after controlling for earnings surprises, sentiment, size, value, volatility, and momentum.
-
----
-
-## Setup & Dependencies
-
-```bash
+<!-- ```bash
 pip install anthropic earningscall pandas numpy pyfixest python-dotenv
 ```
 
 Additional dependencies for video analysis (exploratory):
 ```bash
 pip install mediapipe opencv-python yt-dlp
-```
+``` -->
 
-API credentials required:
+<!-- API credentials required:
 - Anthropic API key (for Claude stress scoring)
 - earningscall API key (for transcript access)
 - WRDS access (for CRSP, Compustat, IBES data)
@@ -193,40 +139,7 @@ ANTHROPIC_API_KEY=your_key_here
 EARNINGSCALL_API_KEY=your_key_here
 ```
 
----
-
-## Pipeline Execution Order
-
-1. `Code /get_data.py` — fetch earnings call transcripts
-2. `Code /stress_scoring.py` — score CEO stress via Claude
-3. `Code /CRSP_merge.py` — merge with CRSP stock data
-4. `Code /Car_0_1_2_180.py` — compute CAR at all event windows
-5. `Code /merging_fundamental.py` — merge Compustat fundamentals
-6. `Code /merging_IBES.py` — merge IBES analyst forecasts
-7. `Code /merging_everything.py` — produce master dataset
-8. `Code /add_lm.py` — append Loughran-McDonald sentiment scores
-9. `regression/` scripts — estimate regression models
-
----
-
-## Sample Coverage
-
-- **Universe**: S&P 500 companies
-- **Period**: 2020 Q1 – 2026 Q1
-- **Quarters per firm**: Up to 4 per year
-- **Company-quarters scored**: 3,000+
-- **Final regression sample**: ~5,342 observations across 429 firms -->
-
-## Motivation: 
-
-Stress is hard to examine. Usually, we gave out surveys and ask people to rate their stress level. This is to some extent a good proxy but with the rise of large language models, it's made possible to quantify things that's otherwise hard to measure. Stress or "sentiment" is one of them. This allows an opportunity to examine the relationship between CEO stress and company performance or stock return.
-
-Intuitively, CEO stress can be tied to a company performance due to two reasons. First, a stressed CEO might not have a mental capacity to guide company's operation. On the other hand, a stressed CEO could also be a signal of dedication and hard work, which could be good for the company.
-
-Since large language models are particularly susceptible to text data, the CEO earnings call transcript can be used to measure CEO stress.
-
-This thesis is exploratory in nature and seeks to see if the stress level of CEOs could generate "abnormal" return beyond the market return. The return window I tested are short term [+0,+1], medium term [+2,+7], and long term [+2, +180]. I used Claude Sonnet 4.6 with a psychology-backed prompt quantifying the CEO internal stress. The stress level is scored on a scale of 1 to 5, with 5 being the most stressed.
-
+--- -->
 
 ## Main results: 
 1. 1 unit increase in stress level exibited in the Q&A session is associated with a 0.9% decrease in the 2-day cumulative abnormal return holding common control variables including firm fundamentals, earnings surprise, and traditional dictionary-based sentiment measures. This means the market immediately react to the LLM stress signal. 
@@ -268,8 +181,6 @@ This thesis is exploratory in nature and seeks to see if the stress level of CEO
 3. Stress signal has no predictive power on both the [2,7] and [2,180] CAR. This means the market adjust to the stress signal very quickly. 
 
 
-## Work in Progress: 
-I am currently working on backtesting this strategy with live market data from 2020-2024 for transaction cost. 
 
 <!-- ## Future:
 Originally, I wanted to incorporate facial image of CEO or even specific characteristics of CEO face such as dark circles for proxy of stress. However, I had some difficulty thinking about how to get quality image of CEOs with universal lightings and angles. Furthermore, audio could be another useful things to add, but some research has done that already.  -->
@@ -279,26 +190,16 @@ You can access a paper version of this project in here. The paper does not inclu
 
 If you have questions or are interested in the code and methodology, contact me at ysun26@cmc.edu. -->
 
-## Limitations and discussions: 
-Several limitations of this project. First, omitted variable bias. There could be several things that can influence stocks' abnormal returns such as company performance, market conditions, or other external factors. The stress produced by Claude could be correlated with these external factors, weakening the causal relationship between CEO stress and abnormal return. I did control for a set of variables but more rigorous identification could be used. Second, the data leakage problem: the model I used (Claude Sonnet 4.6) might be trained on the the stock data and already "know" what happen to the stock. This concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock dat. 
+## Limitations: 
+Here are several limitations and directions for future improvement. First, there is a risk of an omitted variable bias. There could be variables other than the variables specified in the regression that can "explain" the variation in stock abnormal return. Put in another word, there could be other variables that are correlated with the factors included. These could be company performance, market conditions, or other external factors. Therefore, this paper shouldn't conclude there is a causal relationship between internal stress score and future stock abnormal return. I want to point out this might not be as terrible as we think, as 
+
+<!-- The stress produced by Claude could be correlated with these external factors, weakening the causal relationship between CEO stress and abnormal return.  -->
+
+Secondly, CEOs' stress is hard to interpret, as the stress could both come from things related to the company or internal stress. I do want to claim I don't emphasize this as much since I wanted to measure the stress level of CEO and didn't care too much about whehter it's internal caused or caused by external factors. 
+
+Finally and the most important thing: The data leakage problem. The model I used (Claude Sonnet 4.6) might alrady "know" what happened since it might be trained on the the stock data during the period I conduct this research on. I admit this is a lack of consideration on my end at the beginning of the project and an issue with data limitation. Future research should deliberately use models that are trained on different data than the research data. However, this concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock data. 
 
 <!-- At the end of the day, this is a good exercise and shows LLM has huge potential in understanding human language and even psychology. I am both scared and excited about the future of LLM. -->
 
 ## Critique and advice:
 I am open to suggestions to improve this project or collaboration on other things. ysun26@cmc.edu
-
-
-
-
-
-<!-- Research question: This project is motivated by recent rise in Large Language Model and its potential application in predicing human emotions or financial market. In this project, I used Claude-generated stress score of CEO from earnings call transcripts using crafted-prompts to predict stock abnormal return. (can think of it as return of the stock minus market return in a specific period). I found a significant negative relationship between CEO stress and short-term abnormal return, meaning it's possible investors does react to CEO sentiment shown during earning call. There are no predictive power on medium and long-term abnormal return, suggesting the market adjust to the stress signal very quickly. I backtested the result and found this stratetgy is not profitable or more attractive than a simple market index.
-
-
-
-Regression results: 
-
-
-Motivation:
-Results:
-Replication: 
-Future:  -->
