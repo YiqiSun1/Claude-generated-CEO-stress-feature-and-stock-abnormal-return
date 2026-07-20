@@ -24,8 +24,8 @@ Compute Cumulative Abnormal Returns (CAR)
 Regression analysis (OLS + Fixed Effects)
 ```
 
-## Prompting used: 
-'''text
+## Prompts used: 
+```text
 You are an expert in psycholinguistics and corporate financial communication.
 
 Analyze the linguistic stress displayed by a CEO in the {section} of an earnings call.
@@ -48,7 +48,7 @@ Score 1 to 5 (integers only):
 3 = Moderate stress. Noticeable hedging, some distancing or vagueness.
 4 = High stress. Multiple markers present, evasiveness, strong negative affect.
 5 = Very high stress. Pervasive markers throughout, highly evasive, emotionally loaded.
-'''
+```
 
 ## Data Sources
 
@@ -64,25 +64,55 @@ Final samples include:
 | companies: 470 S&P 500 firms | quarters: 2020 Q1 – 2024 Q4 | observations: 8022 firm observations |
 
 ## Summary statistics: 
+## Table 1: Summary Statistics
 
+| Variable  | N     | Mean   | SD    | Min     | Median | Max    |
+|-----------|-------|--------|-------|---------|--------|--------|
+| CAR(0,1)  | 8,022 | 0.002  | 0.062 | −0.436  | 0.001  | 0.459  |
+| Stress QA | 8,010 | 2.530  | 0.676 | 1.000   | 3.000  | 5.000  |
+| Stress PR | 5,762 | 2.032  | 0.630 | 1.000   | 2.000  | 4.000  |
+| VOL       | 7,866 | 0.021  | 0.010 | 0.006   | 0.018  | 0.105  |
+| MOM       | 7,914 | 0.013  | 0.200 | −0.703  | −0.005 | 2.913  |
+| LNMVE     | 7,758 | 10.502 | 1.039 | 7.220   | 10.349 | 15.075 |
+| BM        | 7,758 | 0.340  | 0.324 | 0.000   | 0.248  | 5.338  |
+| UE        | 7,764 | 0.133  | 0.529 | −17.010 | 0.070  | 11.000 |
+| POSWORDS  | 8,022 | 0.020  | 0.006 | 0.000   | 0.019  | 0.150  |
+| NEGWORDS  | 8,022 | 0.007  | 0.004 | 0.000   | 0.006  | 0.079  |
+
+*This table reports summary statistics for the main variables used in the analysis. N denotes the number of observations. SD is the standard deviation.*
 
 ## Reproducing data: 
+The exact reproducing step requires several different data sources and intermediate merging. Because of the complexity, I leave that out of this repository. To reproduce, here are the requirements. 
+
+I leave a sample data in the repository for an overview of the data.  
+
+
 
 ## Regression form:
+$$
+\begin{aligned}
+CAR_{i,t}(h_1, h_2) = \; & \alpha + \beta_1 \, STRESS_{i,t}
+    + \beta_2 \, UE_{i,t} + \beta_3 \, LNMVE_{i,t} \\
+    & + \beta_4 \, MOM_{i,t} + \beta_5 \, BM_{i,t}
+    + \beta_6 \, VOL_{i,t} \\
+    & + \beta_7 \, POSWORDS_{i,t} + \beta_8 \, NEGWORDS_{i,t}
+    + \varepsilon_{i,t}
+\end{aligned}
+$$
 
-<!-- ### Dependent Variables
+### Dependent Variables
 | Variable | Description |
 |----------|-------------|
 | `car_01` | Cumulative Abnormal Return, days 0 to +1 (2-day) |
-| `car_0180` | Cumulative Abnormal Return, days 0 to +180 (6-month) | -->
+| `car_0180` | Cumulative Abnormal Return, days 0 to +180 (6-month) | |
+| `car_27` | Cumulative Abnormal Return, days +2 to +7 (6-day) |
 
-
-<!-- ### Independent Variables — Stress Scores
+### Independent Variables — Stress Scores
 | Variable | Description |
 |----------|-------------|
 | `stress_pr` | CEO linguistic stress in Prepared Remarks (1–5 scale) |
 | `stress_qa` | CEO linguistic stress in Q&A session (1–5 scale) |
-| `stress_whole` | CEO linguistic stress across the full call (1–5 scale) | -->
+| `stress_whole` | CEO linguistic stress across the full call (1–5 scale) |
 
 ### Control Variables
 | Variable | Description |
@@ -91,14 +121,14 @@ Final samples include:
 | `mom` | Momentum (abnormal return, days −127 to −2) |
 | `lnmve` | Log market value of equity (size) |
 | `bm` | Book-to-market ratio (value factor) |
-| `UE` | Unexpected earnings (Actual EPS − Analyst Median Forecast) |
+| `ue` | Unexpected earnings (Actual EPS − Analyst Median Forecast) |
 | `POSWORDS` | Count of Loughran-McDonald positive words |
 | `NEGWORDS` | Count of Loughran-McDonald negative words |
 
 
 
 
-<!-- ## Abnormal Returns Calculation
+## Abnormal Returns Calculation
 
 Abnormal Return (AR) for each trading day is computed as:
 
@@ -112,7 +142,7 @@ Cumulative Abnormal Returns:
 
 ```
 CAR(t1, t2) = Σ AR_t  for t = t1 to t2
-``` -->
+```
 
 
 
