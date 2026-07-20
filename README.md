@@ -3,7 +3,7 @@ This repository addresses a research question: Can CEOs’ internal stress predi
 
 Second, predicting stock return is an essential problem in finance. Analyzing if using LLM-based data features provides an “edge” is useful for understanding information processing in the financial market and the potential application of LLMs in the financial setting.
 
-The stock abnormal return windows I tested are [0,+1] (the first trading day after the earnings call date), [+2,+7] (2-7 days after the earnings call), and [+2,+180]. I found several notable results. First, there exists a significant correlation between the stress score observed during the Q&A session of the earnings call and the stock abnormal return during the window [0, +1]. (-0.005, t=-5.275), meaning the market immediately incorporates the stress signal. Second, CEOs’ stress exhibited during prepared remarks has a stronger correlation with stock abnormal return in the [0,+1] window than Q&A session, suggesting investors might pay more attention to the prepared remarks of the earnings call. Finally, The stress signal has no predictive power in both the [+2,+7] and [+2,+180] windows. 
+The stock abnormal return windows I tested are [0,+1] (the first trading day after the earnings call date), [+2,+7] (2-7 days after the earnings call), and [+2,+180]. I found several notable results. First, there exists a significant correlation between the stress score observed during the Q&A session of the earnings call and the stock abnormal return during the window [0, +1]. (-0.005, t=-5.275), meaning the market immediately incorporates the stress signal. Second, CEOs’ stress exhibited during prepared remarks has an equal correlation with stock abnormal return in the [0,+1] window as the Q&A session, suggesting both prepared remarks of the earnings call have unique information content. Finally, The stress signal has no predictive power in both the [+2,+7] and [+2,+180] windows. 
 
 Following these findings, I constructed a long-short trading strategy with a one day holding period and conducted a backtest using data from 2020-2024. The entry rule is set on the day immediately after the earnings call, and the exit is the day after. The strategy only trades on earnings call days such that at least 2 longs and 2 shorts positions are available to ensure proper risk. The strategy allocates money equally across stocks to ensure profits are driven by the signal rather than by company size. This strategy fails to earn a positive return during the backtesting period from 2020 to 2024. Although this decision is made somewhat arbitrarily and further experiment is needed for the future. 
 
@@ -50,6 +50,8 @@ Score 1 to 5 (integers only):
 4 = High stress. Multiple markers present, evasiveness, strong negative affect.
 5 = Very high stress. Pervasive markers throughout, highly evasive, emotionally loaded.
 ```
+## Model
+The model used for scoring is Claude Sonnet 4.6, a large language model developed by Anthropic. The model is prompted with the above instructions to evaluate the linguistic stress of CEOs during earnings calls. The scoring is done separately for the Prepared Remarks and the Q&A session, resulting in two stress scores per earnings call.
 
 ## Data Sources
 
@@ -91,15 +93,15 @@ The exact reproducing step requires several different data sources and intermedi
 - WRDS access (for CRSP, Compustat, IBES data)
 - Loughran-McDonald dictionary (for sentiment analysis)
 
-Because some of the merging step are done through notebooks and require getting transcript data first, reproducing the exact data is difficult. The 'Code' repository provides core logic as guidance. Start with 'data/tickers.csv'
+Because some of the merging steps are used through notebooks and require getting transcript data first, reproducing the exact data is difficult. The 'Code' repository provides core logic as guidance. Start with 'data/tickers.csv'
 
-get_data.py: getting data from EarningsCall API.
-submit_batch.py: submitting the scoring job to Claude API.
-retrieve_results.py: retrieving the scoring results from Claude API.
-compute_car_0_1.py: computing the cumulative abnormal return for the [0,1] window.
-merging_everything.py: merging data with fundamentals and earnings forecast. 
-
-
+| Script | Purpose |
+|:-------|:--------|
+| `get_data.py` | Download earnings call transcripts from the EarningsCall API |
+| `submit_batch.py` | Submit CEO speech segments to the Claude Batch API for stress scoring |
+| `retrieve_results.py` | Retrieve stress scores from the Claude Batch API |
+| `merging_everything.py` | Merge stress scores with fundamentals and analyst earnings forecasts |
+| `compute_car_0_1.py` | Compute cumulative abnormal returns for the [0,+1] window |
 
 
 
@@ -187,7 +189,7 @@ EARNINGSCALL_API_KEY=your_key_here
 --- -->
 
 ## Main results: 
-1. 1 unit increase in stress level exibited in the Q&A session is associated with a 0.9% decrease in the 2-day cumulative abnormal return holding common control variables including firm fundamentals, earnings surprise, and traditional dictionary-based sentiment measures. This means the market immediately react to the LLM stress signal. 
+1. 1 unit increase in stress level exhibited in the Q&A session is associated with a 0.5% decrease in the 2-day cumulative abnormal return holding common control variables including firm fundamentals, earnings surprise, and traditional dictionary-based sentiment measures. This means the market immediately reacts to the LLM stress signal.
 
 **Dependent variable:** `car_01` · **Estimation:** OLS · **Inference:** clustered (CRV1) · **N:** 7,491 · **R²:**0.011 · **RMSE:** 0.042
 
@@ -204,24 +206,23 @@ EARNINGSCALL_API_KEY=your_key_here
 | POSWORDS    | −0.041   | 0.103      | −0.399  | 0.694      | −0.254 |  0.172  |
 | NEGWORDS    | −0.024   | 0.157      | −0.155  | 0.878      | −0.350 |  0.301  |
 
-2. Stress exibited in the prepared remarks has a higher magnitude of effect on the 2-day cumulative abnormal return that the Q&A session. This is unexpected given my prior is that people would pay more attention to the Q&A session since CEO can't prepare the answer to spontaneous questions. 
+2. Stress exhibited in the prepared remarks has an equal magnitude of effect on the 2-day cumulative abnormal return as the Q&A session. This means that both the prepared remarks and Q&A session are important for investors to understand the stress level of the CEO.
 
-**Dependent variable:** `car_01` · **Estimation:** OLS · **Inference:** clustered (CRV1) · **N:** 5,342 · **R²:** 0.062 · **RMSE:** 0.056
+**Dependent variable:** `car_01` · **Estimation:** OLS · **Inference:** clustered (CRV1) · **N:** 5,342 · **R²:** 0.015 · **RMSE:** 0.039
 
-| Coefficient | Estimate | Std. Error | t value | Pr(>\|t\|) |   2.5% |  97.5% |
-|:------------|---------:|-----------:|--------:|----------:|-------:|-------:|
-| Intercept   |    0.058 |      0.014 |   3.977 |     0.001 |  0.028 |  0.088 |
-| **stress_qa** | **-0.006** | **0.002** | **-3.757** | **0.001** | **-0.010** | **-0.003** |
-| **stress_pr** | **-0.013** | **0.002** | **-6.870** | **0.000** | **-0.016** | **-0.009** |
-| vol         |    0.472 |      0.109 |   4.352 |     0.000 |  0.247 |  0.697 |
-| mom         |   -0.014 |      0.007 |  -1.880 |     0.073 | -0.029 |  0.001 |
-| lnmve       |   -0.002 |      0.001 |  -1.951 |     0.064 | -0.005 |  0.000 |
-| bm          |    0.000 |      0.004 |   0.003 |     0.997 | -0.009 |  0.009 |
-| UE          |    0.031 |      0.004 |   7.676 |     0.000 |  0.023 |  0.040 |
-| POSWORDS    |    0.025 |      0.135 |   0.187 |     0.853 | -0.255 |  0.305 |
-| NEGWORDS    |   -0.322 |      0.310 |  -1.039 |     0.310 | -0.966 |  0.321 |
-
-* one thing to note: This has a different sample size that the first regressio result since in the initial data cleaning process, some prepared remarks are missing due to the quality of the transcript.
+| Coefficient | Estimate | Std. Error | t value | Pr(>\|t\|) | 2.5% | 97.5% |
+|:------------|---------:|-----------:|--------:|-----------:|-------:|--------:|
+| Intercept   |  0.039   | 0.011      |  3.571  | 0.002      |  0.016 |  0.061  |
+| stress_qa   | −0.004   | 0.001      | −2.915  | 0.008      | −0.006 | −0.001  |
+| stress_pr   | −0.004   | 0.001      | −2.656  | 0.014      | −0.007 | −0.001  |
+| vol         |  0.082   | 0.089      |  0.925  | 0.365      | −0.102 |  0.266  |
+| mom         |  0.006   | 0.005      |  1.265  | 0.219      | −0.004 |  0.017  |
+| lnmve       | −0.002   | 0.001      | −2.475  | 0.022      | −0.004 | −0.000  |
+| bm          |  0.001   | 0.003      |  0.445  | 0.661      | −0.005 |  0.008  |
+| UE          |  0.006   | 0.003      |  2.051  | 0.052      | −0.000 |  0.012  |
+| POSWORDS    | −0.105   | 0.099      | −1.057  | 0.302      | −0.311 |  0.101  |
+| NEGWORDS    | −0.016   | 0.175      | −0.094  | 0.926      | −0.380 |  0.347  |
+* one thing to note: This has a different sample size than the first regression result since in the initial data cleaning process, some prepared remarks are missing due to the quality of the transcript.
 
 
 3. Stress signal has no predictive power on both the [2,7] and [2,180] CAR. This means the market adjust to the stress signal very quickly. 
@@ -239,7 +240,7 @@ If you have questions or are interested in the code and methodology, contact me 
 ## Limitations: 
 <!-- Here are several limitations and directions for future improvement. First, there is a risk of an omitted variable bias. There could be variables other than the variables specified in the regression that can "explain" the variation in stock abnormal return. Put in another word, there could be other variables that are correlated with the factors included. These could be company performance, market conditions, or other external factors. Therefore, this paper shouldn't conclude there is a causal relationship between internal stress score and future stock abnormal return. I want to point out this might not be as terrible as we think, as  -->
 
-1. Data leakage remains the largest concern of this project. Claude sonnet 4.6 was trained with data including 2020-2024, so it's possible the model already "knows" what happended in the stock market and generate stress score according to that knowledge. This is mitigated by the fact my prompts focuses on the scoring of text content without guiding the model to look at stock data. Several things are needed for improvement. First, use a model with cutoff date before the data being used.Second, stripping of the company name from the earning call and inspect if the correlation still exist. 
+1. Data leakage remains the largest concern of this project. Claude Sonnet 4.6 was trained with data including 2020-2024, so it's possible the model already "knows" what happended in the stock market and generate stress score according to that knowledge. This is mitigated by the fact my prompts focuses on the scoring of text content without guiding the model to look at stock data. Several things are needed for improvement. First, use a model with cutoff date before the data being used.Second, stripping of the company name from the earning call and inspect if the correlation still exist. 
 2. The scoring part requires further investigation. Future work would entail comparing the scoring of LLM with human scoring to see if LLM scoring makes sense. 3. CEOs' stress is hard to interpret in the current form. LLM generated stress could be related to internal stress or external events. Since the focus for this project is internal stress, future work could use exogeneous shocks for cleaner identification of CEOs stress. 
 
 
@@ -248,7 +249,7 @@ If you have questions or are interested in the code and methodology, contact me 
 
 <!-- CEOs' stress is hard to interpret, as the stress could both come from things related to the company or internal stress. I do want to claim I don't emphasize this as much since I wanted to measure the stress level of CEO and didn't care too much about whehter it's internal caused or caused by external factors.  -->
 
-<!-- Finally and the most important thing: The data leakage problem. The model I used (Claude Sonnet 4.6) might alrady "know" what happened since it might be trained on the the stock data during the period I conduct this research on. I admit this is a lack of consideration on my end at the beginning of the project and an issue with data limitation. Future research should deliberately use models that are trained on different data than the research data. However, this concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock data.  --> -->
+<!-- Finally and the most important thing: The data leakage problem. The model I used (Claude Sonnet 4.6) might alrady "know" what happened since it might be trained on the the stock data during the period I conduct this research on. I admit this is a lack of consideration on my end at the beginning of the project and an issue with data limitation. Future research should deliberately use models that are trained on different data than the research data. However, this concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock data.  --> 
 
 ## Lesson learned: 
 1. Data integrity is more essential than modeling. I realized very late that I only had TICKERs from my API-retrieved data, which is not as robust as identifiers such as PERMNO, which are available in other financial datasets. Furthermore, LLM data leakage problem is serious. Spending more time engineering data is worth the time. 
