@@ -225,7 +225,7 @@ EARNINGSCALL_API_KEY=your_key_here
 * one thing to note: This has a different sample size than the first regression result since in the initial data cleaning process, some prepared remarks are missing due to the quality of the transcript.
 
 
-3. Stress signal has no predictive power on both the [2,7] and [2,180] CAR. This means the market adjust to the stress signal very quickly. 
+3. Stress signal has no predictive power on both the [2,7] and [2,180] CAR. This means the market adjusts to the stress signal very quickly. 
 
 
 
@@ -241,7 +241,8 @@ If you have questions or are interested in the code and methodology, contact me 
 <!-- Here are several limitations and directions for future improvement. First, there is a risk of an omitted variable bias. There could be variables other than the variables specified in the regression that can "explain" the variation in stock abnormal return. Put in another word, there could be other variables that are correlated with the factors included. These could be company performance, market conditions, or other external factors. Therefore, this paper shouldn't conclude there is a causal relationship between internal stress score and future stock abnormal return. I want to point out this might not be as terrible as we think, as  -->
 
 1. Data leakage remains the largest concern of this project. Claude Sonnet 4.6 was trained with data including 2020-2024, so it's possible the model already "knows" what happended in the stock market and generate stress score according to that knowledge. This is mitigated by the fact my prompts focuses on the scoring of text content without guiding the model to look at stock data. Several things are needed for improvement. First, use a model with cutoff date before the data being used.Second, stripping of the company name from the earning call and inspect if the correlation still exist. 
-2. The scoring part requires further investigation. Future work would entail comparing the scoring of LLM with human scoring to see if LLM scoring makes sense. 3. CEOs' stress is hard to interpret in the current form. LLM generated stress could be related to internal stress or external events. Since the focus for this project is internal stress, future work could use exogeneous shocks for cleaner identification of CEOs stress. 
+2. The scoring part requires further investigation. Future work would entail comparing the scoring of LLM with human scoring to see if LLM scoring makes sense.
+3. CEOs' stress is hard to interpret in the current form. LLM generated stress could be related to internal stress or external events. Since the focus for this project is internal stress, future work could use exogeneous shocks for cleaner identification of CEOs stress. 
 
 
 
