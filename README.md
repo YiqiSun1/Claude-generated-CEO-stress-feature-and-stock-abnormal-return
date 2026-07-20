@@ -16,12 +16,13 @@ Earnings Call Transcripts
 Extract CEO speech (Prepared Remarks + Q&A)
         ↓
 Score linguistic stress via Claude (1–5 scale)
+
+Compute Cumulative Abnormal Returns (CAR)
         ↓
 Merge with CRSP returns, Compustat fundamentals, IBES forecasts
         ↓
-Compute Cumulative Abnormal Returns (CAR)
-        ↓
-Regression analysis (OLS + Fixed Effects)
+Regression analysis (OLS with clustered standard errors)
+        
 ```
 
 ## Prompts used: 
@@ -82,9 +83,23 @@ Final samples include:
 *This table reports summary statistics for the main variables used in the analysis. N denotes the number of observations. SD is the standard deviation.*
 
 ## Reproducing data: 
-The exact reproducing step requires several different data sources and intermediate merging. Because of the complexity, I leave that out of this repository. To reproduce, here are the requirements. 
+The exact reproducing step requires several different data sources and intermediate merging. A sample dataset is included in 'data/' for illustration. 
 
-I leave a sample data in the repository for an overview of the data.  
+## Requirements
+- EarningsCallAPI key
+- Anthropic API key
+- WRDS access (for CRSP, Compustat, IBES data)
+- Loughran-McDonald dictionary (for sentiment analysis)
+
+Because some of the merging step are done through notebooks and require getting transcript data first, reproducing the exact data is difficult. The 'Code' repository provides core logic as guidance. Start with 'data/tickers.csv'
+
+get_data.py: getting data from EarningsCall API.
+submit_batch.py: submitting the scoring job to Claude API.
+retrieve_results.py: retrieving the scoring results from Claude API.
+compute_car_0_1.py: computing the cumulative abnormal return for the [0,1] window.
+merging_everything.py: merging data with fundamentals and earnings forecast. 
+
+
 
 
 
@@ -174,19 +189,20 @@ EARNINGSCALL_API_KEY=your_key_here
 ## Main results: 
 1. 1 unit increase in stress level exibited in the Q&A session is associated with a 0.9% decrease in the 2-day cumulative abnormal return holding common control variables including firm fundamentals, earnings surprise, and traditional dictionary-based sentiment measures. This means the market immediately react to the LLM stress signal. 
 
-**Dependent variable:** `car_01` · **Estimation:** OLS · **Inference:** clustered (CRV1) · **N:** 7,491 · **R²:** 0.045 · **RMSE:** 0.057
+**Dependent variable:** `car_01` · **Estimation:** OLS · **Inference:** clustered (CRV1) · **N:** 7,491 · **R²:**0.011 · **RMSE:** 0.042
 
-| Coefficient | Estimate | Std. Error | t value | Pr(>\|t\|) |   2.5% |  97.5% |
-|:------------|---------:|-----------:|--------:|----------:|-------:|-------:|
-| Intercept   |    0.042 |      0.012 |   3.617 |     0.002 |  0.018 |  0.067 |
-| **stress_qa** | **−0.009** |  **0.001** | **−6.277** | **0.000** | **−0.012** | **−0.006** |
-| vol         |    0.351 |      0.099 |   3.562 |     0.002 |  0.147 |  0.556 |
-| mom         |   −0.005 |      0.005 |  −1.114 |     0.277 | −0.016 |  0.005 |
-| lnmve       |   −0.002 |      0.001 |  −2.395 |     0.026 | −0.004 | −0.000 |
-| bm          |   −0.001 |      0.003 |  −0.403 |     0.691 | −0.008 |  0.005 |
-| UE          |    0.031 |      0.004 |   8.048 |     0.000 |  0.023 |  0.039 |
-| POSWORDS    |   −0.013 |      0.143 |  −0.089 |     0.930 | −0.309 |  0.283 |
-| NEGWORDS    |   −0.764 |      0.237 |  −3.228 |     0.004 | −1.255 | −0.273 |
+
+| Coefficient | Estimate | Std. Error | t value | Pr(>\|t\|) | 2.5% | 97.5% |
+|:------------|---------:|-----------:|--------:|-----------:|-------:|--------:|
+| Intercept   |  0.027   | 0.008      |  3.469  | 0.002      |  0.011 |  0.044  |
+| stress_qa   | −0.005   | 0.001      | −5.275  | 0.000      | −0.006 | −0.003  |
+| vol         |  0.075   | 0.092      |  0.824  | 0.419      | −0.114 |  0.265  |
+| mom         |  0.009   | 0.004      |  2.495  | 0.021      |  0.002 |  0.017  |
+| lnmve       | −0.002   | 0.001      | −2.558  | 0.018      | −0.003 | −0.000  |
+| bm          |  0.001   | 0.003      |  0.438  | 0.665      | −0.004 |  0.006  |
+| UE          |  0.006   | 0.002      |  2.504  | 0.020      |  0.001 |  0.010  |
+| POSWORDS    | −0.041   | 0.103      | −0.399  | 0.694      | −0.254 |  0.172  |
+| NEGWORDS    | −0.024   | 0.157      | −0.155  | 0.878      | −0.350 |  0.301  |
 
 2. Stress exibited in the prepared remarks has a higher magnitude of effect on the 2-day cumulative abnormal return that the Q&A session. This is unexpected given my prior is that people would pay more attention to the Q&A session since CEO can't prepare the answer to spontaneous questions. 
 
@@ -221,15 +237,26 @@ You can access a paper version of this project in here. The paper does not inclu
 If you have questions or are interested in the code and methodology, contact me at ysun26@cmc.edu. -->
 
 ## Limitations: 
-Here are several limitations and directions for future improvement. First, there is a risk of an omitted variable bias. There could be variables other than the variables specified in the regression that can "explain" the variation in stock abnormal return. Put in another word, there could be other variables that are correlated with the factors included. These could be company performance, market conditions, or other external factors. Therefore, this paper shouldn't conclude there is a causal relationship between internal stress score and future stock abnormal return. I want to point out this might not be as terrible as we think, as 
+<!-- Here are several limitations and directions for future improvement. First, there is a risk of an omitted variable bias. There could be variables other than the variables specified in the regression that can "explain" the variation in stock abnormal return. Put in another word, there could be other variables that are correlated with the factors included. These could be company performance, market conditions, or other external factors. Therefore, this paper shouldn't conclude there is a causal relationship between internal stress score and future stock abnormal return. I want to point out this might not be as terrible as we think, as  -->
+
+1. Data leakage remains the largest concern of this project. Claude sonnet 4.6 was trained with data including 2020-2024, so it's possible the model already "knows" what happended in the stock market and generate stress score according to that knowledge. This is mitigated by the fact my prompts focuses on the scoring of text content without guiding the model to look at stock data. Several things are needed for improvement. First, use a model with cutoff date before the data being used.Second, stripping of the company name from the earning call and inspect if the correlation still exist. 
+2. The scoring part requires further investigation. Future work would entail comparing the scoring of LLM with human scoring to see if LLM scoring makes sense. 3. CEOs' stress is hard to interpret in the current form. LLM generated stress could be related to internal stress or external events. Since the focus for this project is internal stress, future work could use exogeneous shocks for cleaner identification of CEOs stress. 
+
+
 
 <!-- The stress produced by Claude could be correlated with these external factors, weakening the causal relationship between CEO stress and abnormal return.  -->
 
-Secondly, CEOs' stress is hard to interpret, as the stress could both come from things related to the company or internal stress. I do want to claim I don't emphasize this as much since I wanted to measure the stress level of CEO and didn't care too much about whehter it's internal caused or caused by external factors. 
+<!-- CEOs' stress is hard to interpret, as the stress could both come from things related to the company or internal stress. I do want to claim I don't emphasize this as much since I wanted to measure the stress level of CEO and didn't care too much about whehter it's internal caused or caused by external factors.  -->
 
-Finally and the most important thing: The data leakage problem. The model I used (Claude Sonnet 4.6) might alrady "know" what happened since it might be trained on the the stock data during the period I conduct this research on. I admit this is a lack of consideration on my end at the beginning of the project and an issue with data limitation. Future research should deliberately use models that are trained on different data than the research data. However, this concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock data. 
+<!-- Finally and the most important thing: The data leakage problem. The model I used (Claude Sonnet 4.6) might alrady "know" what happened since it might be trained on the the stock data during the period I conduct this research on. I admit this is a lack of consideration on my end at the beginning of the project and an issue with data limitation. Future research should deliberately use models that are trained on different data than the research data. However, this concern is mitigated by the fact that I prompt the model to only look at the transcript and output a stress score without guiding it to look at the stock data.  --> -->
+
+## Lesson learned: 
+1. Data integrity is more essential than modeling. I realized very late that I only had TICKERs from my API-retrieved data, which is not as robust as identifiers such as PERMNO, which are available in other financial datasets. Furthermore, LLM data leakage problem is serious. Spending more time engineering data is worth the time. 
+2. Implementing a strategy is a different topic from finding a signal. Even if a signal correlates with abnormal returns, that doesn’t mean it's a profitable strategy. Furthermore, thinking about the best way to trade is in itself an important and challenging problem.
+3. One should be mindful of the project's structure and simplicity to facilitate future replication.
+
 
 <!-- At the end of the day, this is a good exercise and shows LLM has huge potential in understanding human language and even psychology. I am both scared and excited about the future of LLM. -->
 
-## Critique and advice:
-I am open to suggestions to improve this project or collaboration on other things. ysun26@cmc.edu
+## Contact:
+I am open to feedback on this project or collaboration on other things. ysun26@cmc.edu

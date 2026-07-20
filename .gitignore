@@ -3,11 +3,16 @@
 Pandas
 regression_result/*
 !regression_result/regression_result.log
-
 to_do.md
 Data/*
 !Data/sample_data.csv
 Code/*
 !Code/submit_batch.py
 !Code/get_data.py
+!Data/tickers.csv
+backtesting/*
+!backtesting/backtest.ipynb
+!Code/retrieve_results.py
+!Code/merging_everything.py
+!Code/compute_car_0_1.py
 
